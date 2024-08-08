@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace libFTH
@@ -46,7 +47,13 @@ namespace libFTH
         public static string POINT_PREFIX = "";
         public static string TagToPoint(string tagname)
         {
-            return POINT_PREFIX + tagname.Replace('\\', '.');
+            string sanitizedTagname = Regex.Replace(tagname, @"[^a-zA-Z0-9_%:]|[\x00-\x1F]", ".");
+            sanitizedTagname = Regex.Replace(sanitizedTagname, @"^[^a-zA-Z0-9_%]+", "");
+            if (string.IsNullOrEmpty(sanitizedTagname))
+            {
+                throw new ArgumentException($"Tag name '{tagname}' must contain at least one valid starting character");
+            }
+            return POINT_PREFIX + sanitizedTagname;
         }
 
         private const string PIAPIDLL = "piapi.dll"; // 64bit!
@@ -126,7 +133,7 @@ namespace libFTH
                         arr_err = errors[i];
                     }
                 }
-                throw new Exception($"pisn_putsnapshotsx returned error {err}, item {arr_item}, ts {ts[arr_item]}, err {arr_err}");
+                throw new Exception($"pisn_putsnapshotsx returned error {err}, item {arr_item}, point number {ptids[arr_item]}, ts {ts[arr_item]}, value {vs[arr_item]}, err {arr_err}");
             }
             return true;
         }
